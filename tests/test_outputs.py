@@ -1,6 +1,8 @@
 """Output sinks."""
 
+import os
 import stat
+import sys
 import time
 
 import numpy as np
@@ -15,11 +17,40 @@ def _frame(w=320, h=180):
 
 @pytest.fixture
 def fake_ffmpeg(tmp_path):
-    """A stand-in binary that records how many bytes actually reached stdin."""
+    """A stand-in binary that records how many bytes actually reached stdin.
+
+    Deliberately a real executable rather than a mock, so this exercises the
+    genuine subprocess pipe. That means it has to be a real executable *on the
+    host*: a `#!/bin/sh` script is not one on Windows, and an extensionless
+    file is invisible to `shutil.which` there because it matches no PATHEXT
+    entry. So the counter is Python, wrapped in whatever launcher the platform
+    can actually execute.
+    """
     counter = tmp_path / "bytes.txt"
-    script = tmp_path / "fake-ffmpeg"
-    script.write_text(f'#!/bin/sh\nwc -c > "{counter}"\n')
-    script.chmod(script.stat().st_mode | stat.S_IEXEC)
+    counter_py = tmp_path / "counter.py"
+    # repr() so a Windows path's backslashes survive into the generated source.
+    target = repr(str(counter))
+    counter_py.write_text(
+        "import sys\n"
+        "total = 0\n"
+        "while True:\n"
+        "    chunk = sys.stdin.buffer.read(1 << 20)\n"
+        "    if not chunk:\n"
+        "        break\n"
+        "    total += len(chunk)\n"
+        f"with open({target}, 'w') as fh:\n"
+        "    fh.write(str(total))\n"
+    )
+
+    if os.name == "nt":
+        # .bat is in PATHEXT and CreateProcess runs it via cmd.exe. Args are
+        # ignored on purpose -- the counter only cares about stdin.
+        script = tmp_path / "fake-ffmpeg.bat"
+        script.write_text(f'@echo off\r\n"{sys.executable}" "{counter_py}"\r\n')
+    else:
+        script = tmp_path / "fake-ffmpeg"
+        script.write_text(f'#!/bin/sh\nexec "{sys.executable}" "{counter_py}"\n')
+        script.chmod(script.stat().st_mode | stat.S_IEXEC)
     return str(script), counter
 
 
