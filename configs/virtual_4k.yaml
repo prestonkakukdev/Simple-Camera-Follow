@@ -1,0 +1,80 @@
+# Digital PTZ: a static 4K camera, auto-framed to a moving 1080p window.
+#
+# Start here. No motors, no serial cable, nothing to fail during a service, and
+# every framing and control gain you tune transfers unchanged to a motorised rig.
+#
+#   camerafollow run -c configs/virtual_4k.yaml
+
+source:
+  source: 0            # HDMI capture card / USB camera. `camerafollow devices` to find it.
+  width: 3840
+  height: 2160
+  fps: 30
+  fourcc: MJPG         # USB cards default to YUY2, which caps you around 5 fps at 4K.
+
+detector:
+  kind: yolo
+  model: yolo11n.pt    # nano is plenty; a person filling a third of frame is easy
+  confidence: 0.4
+  imgsz: 640
+
+tracker:
+  max_age: 3.0         # seconds a track survives unseen; keep >= subject.hold_seconds
+  min_hits: 3
+
+subject:
+  stickiness: 1.2      # raise if the shot flips between the speaker and the band
+  hold_seconds: 2.5
+  min_height_frac: 0.12
+
+framing:
+  subject_anchor: 0.15 # aim at the face, not the middle of the body
+  target_y: 0.32       # face on the upper third
+  target_x: 0.50
+  lead_gain: 0.22      # leave space in the direction of travel
+  zoom_enabled: true   # digital zoom is silent and instant, so it's worth using
+  target_height_frac: 0.62
+
+pan:
+  deadzone: 0.05
+  soft_zone: 0.10
+  kp: 1.6
+  kd: 0.35
+  max_velocity: 0.9
+  max_acceleration: 2.2
+
+tilt:
+  deadzone: 0.07       # vertical drift reads as sloppier than horizontal; be lazier
+  kp: 1.2
+  max_velocity: 0.6
+  max_acceleration: 1.6
+
+zoom:
+  deadzone: 0.15       # wide, or the shot size "hunts" and looks nervous
+  kp: 0.8
+  kd: 0.0
+  max_velocity: 0.35
+  max_acceleration: 0.6
+
+backend:
+  kind: virtual
+  options:
+    out_width: 1920
+    out_height: 1080
+    zoom: 2.0          # crop factor: 4K sensor -> 1080p window
+    min_zoom: 1.3
+    max_zoom: 3.0
+    pan_rate: 0.9
+    tilt_rate: 0.7
+
+server:
+  # Optional JSON control API for scripting and live tuning without a
+  # restart. Not needed to run; enable it or pass --serve when you want it.
+  enabled: false
+
+runtime:
+  lead_time: 0.08      # digital PTZ has no motor lag, so this is small
+  detect_rate: 20
+  control_rate: 60
+  show_preview: true
+  show_overlay: true

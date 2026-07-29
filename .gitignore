@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Model weights: ultralytics downloads these on first run. Don't commit them.
+*.pt
+*.onnx
+*.engine
+
+# Recordings and captures
+*.mp4
+*.mkv
+*.avi
+
+.pytest_cache/
+.DS_Store
+
+.ruff_cache/
+.venv/
+camerafollow.egg-info/
+
+# Claude Code local settings
+.claude/settings.local.json

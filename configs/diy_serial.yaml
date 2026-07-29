@@ -1,0 +1,74 @@
+# A DIY motorised head: your own camera on a stepper pan/tilt bracket, driven
+# by the firmware in firmware/arduino_pantilt/.
+#
+# Video in over HDMI capture; motion out over USB serial.
+#
+#   camerafollow ping /dev/tty.usbmodem14201     # check the head first
+#   camerafollow run -c configs/diy_serial.yaml
+
+source:
+  source: 0            # HDMI capture card
+  width: 1920
+  height: 1080
+  fps: 60              # capture fast: the control loop rides on frame arrivals
+  fourcc: MJPG
+
+detector:
+  kind: yolo
+  model: yolo11n.pt
+  confidence: 0.4
+  imgsz: 640
+
+tracker:
+  max_age: 3.0         # seconds; keep >= subject.hold_seconds
+  min_hits: 3
+
+subject:
+  stickiness: 1.4
+  hold_seconds: 2.5
+
+framing:
+  subject_anchor: 0.15
+  target_y: 0.33
+  lead_gain: 0.24
+  zoom_enabled: false  # no motorised lens on a DIY head
+
+# Steppers skip steps if you step-change their speed, and a skipped step is a
+# permanently lost zero. Keep max_acceleration conservative; it also happens to
+# be what makes the motion look expensive.
+pan:
+  deadzone: 0.07
+  soft_zone: 0.12
+  kp: 1.4
+  kd: 0.32
+  max_velocity: 0.8
+  max_acceleration: 1.5
+
+tilt:
+  deadzone: 0.09
+  soft_zone: 0.12
+  kp: 1.1
+  kd: 0.25
+  max_velocity: 0.5
+  max_acceleration: 1.2
+
+backend:
+  kind: serial
+  options:
+    device: "/dev/tty.usbmodem14201"   # macOS; Linux /dev/ttyUSB0, Windows COM3
+    baudrate: 115200
+    keepalive_hz: 20                   # feeds the firmware watchdog
+    invert_pan: false
+    invert_tilt: false
+
+server:
+  # Optional JSON control API for scripting and live tuning without a
+  # restart. Not needed to run; enable it or pass --serve when you want it.
+  enabled: false
+
+runtime:
+  lead_time: 0.10      # USB serial is fast; this is mostly inference + motor ramp
+  detect_rate: 25
+  control_rate: 60
+  show_preview: true
+  show_overlay: true

@@ -1,0 +1,84 @@
+# Simplest possible setup: a plain webcam, auto-framed, published as a virtual
+# camera for Zoom / Meet / Teams / OBS. No motors, no capture card, no PTZ.
+#
+# Good for solo streaming, video podcasts, remote teaching, and demos where you
+# want to move around instead of sitting still in front of a fixed lens.
+#
+#   camerafollow run -c configs/webcam_streamer.yaml
+#
+# Needs: pip install 'camerafollow[yolo,camera]'
+#   plus OBS Studio (Windows/macOS) or v4l2loopback (Linux) for the virtual cam.
+
+source:
+  source: 0
+  width: 1920
+  height: 1080
+  fps: 30
+  fourcc: MJPG
+
+detector:
+  kind: yolo
+  model: yolo11n.pt
+  confidence: 0.45     # a bit strict: one person, good light, few false positives
+  imgsz: 640
+
+subject:
+  stickiness: 1.5
+  hold_seconds: 3.0
+  min_height_frac: 0.25   # you fill a lot of frame; ignore anyone in the doorway
+
+framing:
+  subject_anchor: 0.15
+  target_y: 0.36       # slightly lower than a stage shot: this is a head-and-shoulders
+  target_x: 0.50
+  lead_gain: 0.18
+  zoom_enabled: true
+  target_height_frac: 0.85   # tight-ish framing for a talking-head shot
+
+# Gentle: the shot is close, so any movement is magnified. These are the softest
+# gains of any shipped config.
+pan:
+  deadzone: 0.06
+  soft_zone: 0.12
+  kp: 1.2
+  kd: 0.30
+  max_velocity: 0.55
+  max_acceleration: 1.4
+
+tilt:
+  deadzone: 0.09
+  kp: 0.9
+  max_velocity: 0.35
+  max_acceleration: 1.0
+
+zoom:
+  deadzone: 0.18
+  kp: 0.6
+  kd: 0.0
+  max_velocity: 0.25
+  max_acceleration: 0.5
+
+backend:
+  kind: virtual
+  options:
+    out_width: 1280
+    out_height: 720
+    zoom: 1.5          # modest crop leaves room to pan without softening much
+    min_zoom: 1.2
+    max_zoom: 2.2
+    pan_rate: 0.7
+    tilt_rate: 0.5
+
+output:
+  virtual_camera: true
+
+server:
+  # Optional JSON control API. Handy here for live tuning while you sit in
+  # shot: curl -X POST localhost:8477/api/config -d '{"pan.kp": 1.4}'
+  enabled: false
+
+runtime:
+  lead_time: 0.06      # digital PTZ: no motor lag to cancel
+  detect_rate: 20
+  control_rate: 60
+  show_preview: false  # the virtual camera *is* your preview

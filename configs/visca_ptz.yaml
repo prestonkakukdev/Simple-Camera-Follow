@@ -1,0 +1,81 @@
+# A commodity VISCA PTZ camera (PTZOptics, BirdDog, AVer, Sony, Lumens, Minrray...).
+#
+# The camera supplies both the picture and the motion, so you need no capture
+# card and no motor of your own -- this is the cheapest path to a full rig.
+# Video comes off the camera's own RTSP stream; motion goes back over VISCA-IP.
+#
+#   camerafollow run -c configs/visca_ptz.yaml
+
+source:
+  # Most PTZ cameras expose RTSP on one of these; check your model's manual.
+  #   PTZOptics/BirdDog:  rtsp://<ip>:554/1
+  #   Sony SRG:           rtsp://<ip>/video1
+  source: "rtsp://192.168.1.100:554/1"
+  backend: ffmpeg
+  fourcc: null
+
+detector:
+  kind: yolo
+  model: yolo11n.pt
+  confidence: 0.4
+  imgsz: 640
+
+tracker:
+  max_age: 3.5         # seconds; keep >= subject.hold_seconds below
+  min_hits: 3
+
+subject:
+  stickiness: 1.5
+  hold_seconds: 3.0
+  min_height_frac: 0.15
+
+framing:
+  subject_anchor: 0.15
+  target_y: 0.34
+  lead_gain: 0.25
+  lead_smoothing: 0.5
+  zoom_enabled: false  # optical zoom hunting is very visible; leave off until tuned
+
+# Motors have real inertia and the network adds delay, so these are gentler
+# than the digital-PTZ profile and the dead zones are wider.
+pan:
+  deadzone: 0.08
+  soft_zone: 0.14
+  kp: 1.3
+  kd: 0.30
+  max_velocity: 0.7
+  max_acceleration: 1.4
+
+tilt:
+  deadzone: 0.10
+  soft_zone: 0.14
+  kp: 1.0
+  kd: 0.25
+  max_velocity: 0.45
+  max_acceleration: 1.0
+
+backend:
+  kind: visca
+  options:
+    transport: ip
+    host: "192.168.1.100"
+    port: 52381
+    address: 1
+    invert_pan: false   # flip if the camera runs away from the subject
+    invert_tilt: false
+    min_command: 0.03   # VISCA speed 1 is often still too fast to be useful
+
+server:
+  # Optional JSON control API for scripting and live tuning without a
+  # restart. Not needed to run; enable it or pass --serve when you want it.
+  enabled: false
+
+runtime:
+  # Measure this: RTSP buffering + inference + VISCA round-trip + motor spin-up.
+  # 120-250ms is typical for a networked PTZ. See "Tuning" in the README.
+  lead_time: 0.18
+  detect_rate: 15
+  control_rate: 50
+  return_home_after: 30.0
+  show_preview: true
+  show_overlay: true

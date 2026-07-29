@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "camerafollow"
+version = "0.1.0"
+description = "Open-source AI camera operator: automatic subject tracking and framing for any camera"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = [
+    "ptz", "auto-tracking", "auto-framing", "camera", "broadcast", "visca",
+    "object-tracking", "lecture-capture", "streaming", "virtual-camera",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Video :: Capture",
+]
+dependencies = [
+    "numpy>=1.24",
+    "opencv-python>=4.8",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+# The detector you should actually run.
+yolo = ["ultralytics>=8.2"]
+# Motorised heads: DIY serial rigs and RS-232 VISCA.
+serial = ["pyserial>=3.5"]
+# Publish the framed output as a system webcam.
+camera = ["pyvirtualcam>=0.11"]
+dev = ["pytest>=7.4", "ruff>=0.6"]
+all = ["ultralytics>=8.2", "pyserial>=3.5", "pyvirtualcam>=0.11"]
+
+[project.urls]
+Homepage = "https://github.com/prestonkakukdev/camerafollow"
+Issues = "https://github.com/prestonkakukdev/camerafollow/issues"
+Changelog = "https://github.com/prestonkakukdev/camerafollow/blob/main/CHANGELOG.md"
+
+[project.scripts]
+camerafollow = "camerafollow.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["camerafollow*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4"]
+ignore = [
+    # The web UI is one embedded HTML string; splitting it hurts more than it helps.
+    "E501",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E731"]

@@ -1,0 +1,36 @@
+name: Bug report
+description: Something doesn't work
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations: { required: true }
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `camerafollow doctor`
+      render: shell
+    validations: { required: true }
+  - type: textarea
+    id: config
+    attributes:
+      label: Your config
+      description: The YAML you ran, or the full command line.
+      render: yaml
+    validations: { required: true }
+  - type: input
+    id: hardware
+    attributes:
+      label: Camera and head
+      placeholder: "e.g. Logitech Brio + digital PTZ, or PTZOptics 30X-SDI over VISCA-IP"
+  - type: textarea
+    id: director
+    attributes:
+      label: Director view
+      description: >
+        A screenshot or short screen recording of the director window. For
+        anything motion-related this is worth more than any description — the
+        boxes, prediction, and dead zone usually show the cause directly.

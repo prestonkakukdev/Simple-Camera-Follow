@@ -1,0 +1,36 @@
+name: Field report
+description: You ran it on real hardware — tell us how it went
+labels: [field-report]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        These are the most valuable reports this project gets. Every framing
+        default in the repo is a guess waiting to be replaced by evidence.
+  - type: input
+    id: use_case
+    attributes:
+      label: What were you filming
+      placeholder: "e.g. a 90-minute lecture, a jiu-jitsu class, a stage play"
+    validations: { required: true }
+  - type: input
+    id: rig
+    attributes:
+      label: Rig
+      placeholder: "camera, lens/FOV, mount, distance to subject"
+    validations: { required: true }
+  - type: textarea
+    id: config
+    attributes:
+      label: Config you settled on
+      render: yaml
+  - type: textarea
+    id: verdict
+    attributes:
+      label: What worked, what didn't
+      description: Be specific about the motion — trailing, overshoot, jitter, wrong subject.
+    validations: { required: true }
+  - type: input
+    id: duration
+    attributes:
+      label: How long did it run without intervention
