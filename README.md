@@ -1,4 +1,4 @@
-# camerafollow
+# simple camera follow
 
 **An AI camera operator you can run on anything.**
 
